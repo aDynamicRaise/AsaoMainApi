@@ -4,8 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class RunConfig(BaseModel):
-    host: str = "127.0.0.1"
-    port: str = 8000
+    host: str = "0.0.0.0"
+    port: int = 8000
 
 class ApiPrefix(BaseModel):
     prefix: str = "/api"
@@ -13,6 +13,7 @@ class ApiPrefix(BaseModel):
     
 
 class DatabaseConfig(BaseSettings):
+    url_migrations: PostgresDsn
     url: PostgresDsn
     echo: bool = False
     echo_pool: bool = False

@@ -1,0 +1,42 @@
+services:
+
+  api:
+    container_name: asao_api
+    build: ./
+    depends_on:
+      db:
+        condition: service_healthy
+    command: /bin/sh -c 'cd src && python main.py' #python ./src/main.py #bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; python ./src/main.py>'
+    volumes:
+      - ./src:/app/src
+    ports:
+      - 1252:8000
+    restart: always
+    networks:
+      - asao_network
+
+  db:
+    container_name: asao_postgres
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    ports:
+      - "5433:5432"
+    volumes:
+      - .postgres:/var/lib/postgresql/data
+    restart: always
+    healthcheck :
+      test: [ "CMD", "pg_isready", "-q", "-d", "asao_db", "-U", "user" ]
+      interval : 5s
+      timeout : 5s
+      retries : 5
+    networks:
+      - asao_network
+    env_file:
+      - .env.docker
+
+networks:
+  asao_network:
+    driver: bridge
