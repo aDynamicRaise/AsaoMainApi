@@ -21,3 +21,8 @@ class Base(DeclarativeBase):
 
 # на счет id, я его поставил как базовый, но он в целом может поменяться, 
 # если у нас не int id будет, в таком случае можно добавить папку mixins, куда будем прописывать всякие виды id, и от них так же наследовать модели бд
+
+class User(Base):
+    email: Mapped[str] = mapped_column(unique=True)
+    login: Mapped[str] = mapped_column(unique=True)
+    password: Mapped[str] = mapped_column(unique=True)
