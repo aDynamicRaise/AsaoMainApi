@@ -5,8 +5,8 @@ import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db_helper import db_helper
 
-from auth.schemas import UserCreate, UserLogin
-from auth.service import add_one_user, get_all_users, get_current_user, get_id_by_login
+from auth.schemas import UserCreate, UserLogin, UserRead
+from auth.service import add_one, get_all, get_current_user, get_id_by_email
 
 
 from authx import AuthX, AuthXConfig
@@ -22,11 +22,11 @@ conf_auth.JWT_TOKEN_LOCATION = ["cookies"]
 security = AuthX(config=conf_auth)
 
 
-@router.get("")
+@router.get("", response_model=list[UserRead])
 async def get_all_users(
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
-    return await get_all_users(session=session)
+    return await get_all(session=session)
 
 
 
@@ -35,9 +35,11 @@ async def add_one_user(
     user_data: UserCreate,
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
-    new_user = await add_one_user(session=session, **user_data.dict())
+    new_user = await add_one(session=session, **user_data.dict())
     print(f"Добавлен новый пользователь с ID: {new_user.id}")
     return new_user
+
+
 
 
 @router.post("/login")
@@ -46,7 +48,7 @@ async def log_user(
     response: Response,
     session: AsyncSession = Depends(db_helper.session_getter), 
 ):
-    user_id = await get_id_by_login(credentials.login, credentials.password, session=session)
+    user_id = await get_id_by_email(email=credentials.email, password=credentials.password, session=session)
     if not user_id:
         raise HTTPException(status_code=401, detail="Incorrect login or password")
     
