@@ -4,6 +4,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.orm import Mapped, mapped_column
 
+from auth.schemas import UserRead
 from config import settings
 from utils.case_converter import camel_case_to_snake_case
 
@@ -26,6 +27,13 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(unique=True)
     email: Mapped[str] = mapped_column(unique=True)
+
+    def to_read_model(self) -> UserRead:
+        return UserRead(
+            id=self.id,
+            name=self.name,
+            email=self.email
+        )
 
 class UserPasses(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), primary_key=True)
