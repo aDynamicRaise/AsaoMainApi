@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from config import settings
-from auth.routers import router as router_users
+from auth.routers import user_router
 
 
 router = APIRouter(
@@ -9,6 +9,6 @@ router = APIRouter(
 )
 
 router.include_router(
-    router_users,
+    user_router,
     prefix=settings.api.users, 
 )
