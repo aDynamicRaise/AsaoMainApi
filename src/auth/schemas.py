@@ -46,4 +46,4 @@ class ResponceCreate(BaseModel):
 class UserPassSchema(BaseModel):
     user_id: int
     hash_pass: str = Field(min_length=60)
-    date_pass: datetime
+    date_pass: datetime = datetime.now()

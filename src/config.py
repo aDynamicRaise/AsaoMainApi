@@ -12,6 +12,13 @@ class ApiPrefix(BaseModel):
     users:  str = "/users"
     
 
+class SecretsConfig(BaseModel):
+    JWT_SECRET_KEY: str
+    TEMP_JWT_SECRET_KEY: str
+    login_mail: str
+    password_mail: str
+    
+
 class DatabaseConfig(BaseSettings):
     url_migrations: PostgresDsn
     url: PostgresDsn
@@ -38,5 +45,7 @@ class Settings(BaseSettings):
     run: RunConfig = RunConfig()
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
+    secrets: SecretsConfig
+    
 
 settings = Settings()
