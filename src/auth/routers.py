@@ -145,7 +145,7 @@ async def confirmation(request: Request, input_code: str, response: Response):
     print("Токен для смены пароля создан")
     response.set_cookie(TEMP_JWT_COOKIE_NAME, temp_token, httponly=True)
 
-    return {"access_token": temp_token}
+    return {"temp_access_token": temp_token}
 
 
 @user_router.post("/edit_pass/{new_pass}")
@@ -199,6 +199,6 @@ def get_current_token_payload(request: Request):
         return payload
     
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=400, detail="Срок действия временного токена истек")
+        raise HTTPException(status_code=400, detail="Срок действия токена истек")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=400, detail="Недействительный временный токен")
+        raise HTTPException(status_code=400, detail="Недействительный токен")
