@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 import uvicorn
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,6 +30,25 @@ app = FastAPI(
 app.include_router(
     api_router,
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def unicorn_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+
+    for error in errors:
+        if error['type'] == 'value_error' and error['loc'][1] == 'email':
+            error['msg'] = "Неверный формат адреса электронной почты. Адрес должен быть по типу: user@example.com"
+        elif error['type'] == 'string_too_short' and error['loc'][1] == 'password':
+            error['msg'] = "Пароль должен содержать не менее 4 символов"
+        elif error['type'] == 'string_too_long' and error['loc'][1] == 'password':
+            error['msg'] = "Пароль должен содержать не более 20 символов"
+
+    return ORJSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": exc.errors()}),
+    )
+
 
 origins = [ "http://localhost:3000", ]
 app.add_middleware(
