@@ -36,11 +36,6 @@ class UserService(BaseService):
         user = await self.repo.get_by_id(id)
         return user
     
-    async def get_current_user(self, payload: dict):
-        user_id = int(payload.get("sub", "0"))
-        if user_id == 0:
-            return None
-        return await self.get_by_id(user_id)
     
     async def get_id_by_email(self, email: str):
         return await self.repo.get_id_by_email(email)

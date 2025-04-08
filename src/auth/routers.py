@@ -111,10 +111,13 @@ def generate_temp_token(user_id: int):
 
 
 @user_router.get("/edit_pass/send_verif_code")
-async def send_verif_code(user_id: int, user_service: Annotated[UserService, Depends(user_service)], send_mail_service: Annotated[SendMailService, Depends(send_mail_service)],):
+async def send_verif_code(request: Request, user_service: Annotated[UserService, Depends(user_service)], send_mail_service: Annotated[SendMailService, Depends(send_mail_service)],):
+    payload = get_current_token_payload(request)
+    user_id = int(payload.get("sub", "0"))
+    if user_id == 0:
+        raise HTTPException(status_code=404, detail="User not found")
     try:
         user = await user_service.get_by_id(user_id)
-
         temp_code = generate_verification_code(user_id)
         
         text = f"Данное письмо высылается автоматически, на него не нужно отвечать. \nДля подтверждения личности при изменении пароля в АППО для вас был сгенерирован \
@@ -125,6 +128,7 @@ async def send_verif_code(user_id: int, user_service: Annotated[UserService, Dep
         return {"message" : "Письмо отправлено", "status" : 200}
     except Exception as e:
         print(f"Ошибка отправки кода верификации: {e}")
+        raise e
         
 
 
@@ -181,10 +185,11 @@ async def edit_pass(request: Request, new_pass: str, response: Response, user_pa
 async def protected(request: Request, user_service: Annotated[UserService, Depends(user_service)]):
 
     payload = get_current_token_payload(request)
-    current_user = await user_service.get_current_user(payload)
-    if not current_user:
-            raise HTTPException(status_code=404, detail="User not found")
-
+    user_id = int(payload.get("sub", "0"))
+    if user_id == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    current_user = await user_service.get_by_id(user_id)
     return UserRead(**current_user.dict())
 
 
