@@ -47,4 +47,24 @@ class UserPasses(Base):
             hash_pass=self.hash_pass,
             date_pass=self.date_pass
         )
-    
+
+
+class Product(Base):
+    __tablename__ = "product"
+
+    name: Mapped[str]
+    link: Mapped[str]
+    seller_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+
+
+class ProductData(Base):
+    __tablename__ = "product_data"
+
+    product_id: Mapped[int] = mapped_column(ForeignKey("product.id"))
+    date_receipt: Mapped[datetime]
+    ozon_card_price: Mapped[float | None]
+    discount_price: Mapped[float | None]
+    base_price: Mapped[float]
+    star_count: Mapped[float]
+    review_count: Mapped[int]
+
