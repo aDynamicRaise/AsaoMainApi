@@ -14,28 +14,32 @@ services:
     restart: always
     networks:
       - asao_network
+    env_file:
+      - .env
 
   db:
     container_name: asao_postgres
     image: postgres:latest
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
       - .postgres:/var/lib/postgresql/data
+      - ./init.sh:/docker-entrypoint-initdb.d/init.sh
+      - ./src/database/dump.sql:/docker-entrypoint-initdb.d/dump.sql
     restart: always
     healthcheck :
-      test: [ "CMD", "pg_isready", "-q", "-d", "asao_db", "-U", "user" ]
+      test: [ "CMD", "pg_isready", "-q", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}" ]
       interval : 5s
       timeout : 5s
       retries : 5
     networks:
       - asao_network
     env_file:
-      - .env.docker
+      - .env
 
 networks:
   asao_network:
