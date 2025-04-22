@@ -1,6 +1,7 @@
 from datetime import timezone, datetime
-from sqlalchemy import CHAR, ForeignKey, MetaData, Text, text
-from sqlalchemy.orm import DeclarativeBase
+from typing import Optional
+from sqlalchemy import CHAR, Float, ForeignKey, MetaData, Text, text
+from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -54,7 +55,9 @@ class Product(Base):
 
     name: Mapped[str]
     link: Mapped[str]
-    seller_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    seller_id: Mapped[Optional[int]] = mapped_column(ForeignKey("user.id"), nullable=True)
+
+    data_history: Mapped[list["ProductData"]] = relationship("ProductData", back_populates="product")
 
 
 class ProductData(Base):
@@ -62,9 +65,14 @@ class ProductData(Base):
 
     product_id: Mapped[int] = mapped_column(ForeignKey("product.id"))
     date_receipt: Mapped[datetime]
-    ozon_card_price: Mapped[float | None]
-    discount_price: Mapped[float | None]
+    # ozon_card_price: Mapped[float | None]
+    # discount_price: Mapped[float | None]
+    ozon_card_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True) 
+    discount_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True) 
     base_price: Mapped[float]
     star_count: Mapped[float]
     review_count: Mapped[int]
+
+
+    product: Mapped["Product"] = relationship("Product", back_populates="data_history")
 

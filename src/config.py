@@ -10,6 +10,7 @@ class RunConfig(BaseModel):
 class ApiPrefix(BaseModel):
     prefix: str = "/api"
     users:  str = "/users"
+    stats: str = "/statistics"
     
 
 class SecretsConfig(BaseModel):
