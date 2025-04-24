@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from config import settings
 from auth.routers import user_router
 from statistics.router import router as stats_router
+from collecting.router import router as collecting_router
 
 
 router = APIRouter(
@@ -17,4 +18,9 @@ router.include_router(
 router.include_router(
     stats_router,
     prefix=settings.api.stats,
+)
+
+router.include_router(
+    collecting_router,
+    prefix=settings.api.collecting,
 )

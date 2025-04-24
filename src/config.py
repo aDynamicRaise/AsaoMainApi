@@ -11,6 +11,7 @@ class ApiPrefix(BaseModel):
     prefix: str = "/api"
     users:  str = "/users"
     stats: str = "/statistics"
+    collecting: str = "/collecting"
     
 
 class SecretsConfig(BaseModel):
