@@ -11,6 +11,11 @@ import os
 from sqlalchemy.exc import IntegrityError
 from database import get_async_session, Product, ProductData
 from utils.repository import AbstractRepository
+from config import msk_timezone
+import traceback
+
+from requests_html import HTMLSession
+import json
 
 
 class ProductService:
@@ -22,22 +27,53 @@ class ProductService:
 
     async def get_product_id(self, product_id: int) -> str | None:
         return await self.repo.get_id_by_id(product_id)
+    
+
+############# Пытался без селениума - напрямую обращаться
+def search_ozon_products(item_name):
+    session = HTMLSession()
+    
+    # Формируем URL для поиска
+    url = f"https://www.ozon.ru/search/?text={item_name}"
+
+    response = session.get(url)
+
+    if response.status_code != 200:
+        raise Exception(f"Ошибка запроса: {response.status_code}") # здесь кидает 403
+
+    # Теперь мы можем получить HTML, который рендерится через JavaScript
+    response.html.render()
+
+    # Анализируем страницу на предмет товаров
+    products = []
+    items = response.html.find('.product-card')  # Или другой CSS-селектор, который указывает на карточку товара
+
+    for item in items:
+        product = {
+            "title": item.find('.product-title', first=True).text if item.find('.product-title', first=True) else "Нет данных",
+            "price": item.find('.price', first=True).text if item.find('.price', first=True) else "Нет данных",
+            "url": item.find('a', first=True).attrs.get('href') if item.find('a', first=True) else "Нет данных",
+            "image": item.find('img', first=True).attrs.get('src') if item.find('img', first=True) else "Нет данных",
+        }
+        products.append(product)
+
+    return products
+#############
 
 # получить данные товаров по запросу (item_name)
 # *amount_needed_items_max - по какому количеству товаров собрать данные, но парсинг может собрать и меньшее количество (TODO: сделать четкое количество)
-async def get_products_data(item_name, amount_needed_items_max=10, date_receipt=datetime.now().strftime("%Y-%m-%d %H:%M:%S")):
+async def get_products_data(item_name, amount_needed_items_max=10, date_receipt=datetime.now(msk_timezone).strftime("%Y-%m-%d %H:%M:%S")):
     # Настройка опций Chrome
     options = uc.ChromeOptions()
     
-    # Явно указываем пути
-    options.binary_location = '/usr/bin/google-chrome'
-    
+    options.binary_location = "/usr/bin/chromium"
+    options.add_argument("--headless=new")
+    options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-infobars")
     options.add_argument("--disable-extensions")
     options.add_argument("--remote-debugging-port=9222")
-    options.add_argument("--headless=new")
 
     products_data = []
     product_urls = []
@@ -45,13 +81,15 @@ async def get_products_data(item_name, amount_needed_items_max=10, date_receipt=
 
     try:
         driver = uc.Chrome(
-            options=options,
-            driver_executable_path='/usr/bin/chromedriver'
+            options=options
         )
         driver.implicitly_wait(10)
 
         driver.get(url='https://ozon.ru')
         time.sleep(2)
+
+        # посмотреть что за страницу возвращает (сейчас - страницу с капчей, что very bad)
+        print(driver.page_source[:1000])
 
         # Ожидание появления поля поиска
         find_input = WebDriverWait(driver, 10).until(
@@ -102,6 +140,7 @@ async def get_products_data(item_name, amount_needed_items_max=10, date_receipt=
 
     except Exception as e:
         print(f'[-] Ошибка в процессе выполнения get_products_data: {e}')
+        traceback.print_exc()
     finally:
         if driver:
             driver.quit()  # Гарантированное правильное закрытие браузера

@@ -1,7 +1,13 @@
 from pydantic import BaseModel
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import pytz
 
+# Указываем часовой пояс Москвы
+# *Использование: 
+# *from config import msk_timezone
+# *date_variable = datetime.now(msk_timezone)
+msk_timezone = pytz.timezone("Europe/Moscow")
 
 class RunConfig(BaseModel):
     host: str = "0.0.0.0"

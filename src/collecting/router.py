@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
 from collecting.schemas import ProductBase
-from collecting.services import ProductService, get_products_data, prepare_data_for_db, save_to_database
+from collecting.services import ProductService, get_products_data, prepare_data_for_db, save_to_database, search_ozon_products
 from collecting.dependencies import product_service
 from typing import Annotated
 from datetime import datetime
+from config import msk_timezone
 
 router = APIRouter(tags=["collecting"])
 
@@ -20,10 +21,18 @@ async def update_product_data(
             return {'status': 'error', 'message': f'Товар с артикулом {request.product_id} не найден.'}
 
         # дата и время сбора данных
-        date_receipt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Пример: 2025-04-25 15:30:45
+        date_receipt = datetime.now(msk_timezone).strftime("%Y-%m-%d %H:%M:%S")  # Пример: 2025-04-25 15:30:45
+
+        #пытался без селениум
+        #products = search_ozon_products("носки")
+        #for product in products[:5]:
+        #    print(product)
 
         # Получаем данные по товарам
         products_data = await get_products_data(product_name, 10, date_receipt)
+
+        if not products_data:
+            return {'status': 'error', 'message': f'Не удалось собрать данные по товару с артикулом {request.product_id} и его конкурентам.'}
 
         # Преобразуем данные для загрузки в БД
         products_to_create, products_data_to_create = await prepare_data_for_db(products_data, product_service)
