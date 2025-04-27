@@ -8,7 +8,7 @@ from config import msk_timezone
 
 router = APIRouter(tags=["collecting"])
 
-#Сбор данных по товару (на основе product_id в request) и его конкурентам
+#Сбор данных по товару (на основе product_id в request) и его конкурентам и сохранение данных в БД
 @router.post("/update_product_data")
 async def update_product_data(
     product_service: Annotated[ProductService, Depends(product_service)],
@@ -23,11 +23,6 @@ async def update_product_data(
         # дата и время сбора данных
         date_receipt = datetime.now(msk_timezone).strftime("%Y-%m-%d %H:%M:%S")  # Пример: 2025-04-25 15:30:45
 
-        #пытался без селениум
-        #products = search_ozon_products("носки")
-        #for product in products[:5]:
-        #    print(product)
-
         # Получаем данные по товарам
         products_data = await get_products_data(product_name, 10, date_receipt)
 
@@ -40,7 +35,7 @@ async def update_product_data(
         # Сохраняем в базу данных
         await save_to_database(products_to_create, products_data_to_create)
 
-        return {"message" : f"Новые данные успешно собраны. Дата сбора: {date_receipt}", "status" : 200}
+        return {"message" : f"Новые данные успешно собраны", "status" : 200}
     except Exception as e:
         error_msg = (
             f"[-] Ошибка в update_product_data\n"

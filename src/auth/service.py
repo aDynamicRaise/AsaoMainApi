@@ -40,6 +40,9 @@ class UserService(BaseService):
     async def get_id_by_email(self, email: str):
         return await self.repo.get_id_by_email(email)
     
+    async def get_name_by_id(self, user_id: int):
+        return await self.repo.get_name_by_id(user_id)
+    
 
     def verify_user(self, crdnt: UserLogin, hash_pass: str):
         #user_id = await self.get_id_by_email(crdnt.email)

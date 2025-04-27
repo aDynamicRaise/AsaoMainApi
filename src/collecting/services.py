@@ -14,9 +14,6 @@ from utils.repository import AbstractRepository
 from config import msk_timezone
 import traceback
 
-from requests_html import HTMLSession
-import json
-
 
 class ProductService:
     def __init__(self, repo: AbstractRepository):
@@ -27,38 +24,6 @@ class ProductService:
 
     async def get_product_id(self, product_id: int) -> str | None:
         return await self.repo.get_id_by_id(product_id)
-    
-
-############# Пытался без селениума - напрямую обращаться
-def search_ozon_products(item_name):
-    session = HTMLSession()
-    
-    # Формируем URL для поиска
-    url = f"https://www.ozon.ru/search/?text={item_name}"
-
-    response = session.get(url)
-
-    if response.status_code != 200:
-        raise Exception(f"Ошибка запроса: {response.status_code}") # здесь кидает 403
-
-    # Теперь мы можем получить HTML, который рендерится через JavaScript
-    response.html.render()
-
-    # Анализируем страницу на предмет товаров
-    products = []
-    items = response.html.find('.product-card')  # Или другой CSS-селектор, который указывает на карточку товара
-
-    for item in items:
-        product = {
-            "title": item.find('.product-title', first=True).text if item.find('.product-title', first=True) else "Нет данных",
-            "price": item.find('.price', first=True).text if item.find('.price', first=True) else "Нет данных",
-            "url": item.find('a', first=True).attrs.get('href') if item.find('a', first=True) else "Нет данных",
-            "image": item.find('img', first=True).attrs.get('src') if item.find('img', first=True) else "Нет данных",
-        }
-        products.append(product)
-
-    return products
-#############
 
 # получить данные товаров по запросу (item_name)
 # *amount_needed_items_max - по какому количеству товаров собрать данные, но парсинг может собрать и меньшее количество (TODO: сделать четкое количество)
@@ -66,14 +31,13 @@ async def get_products_data(item_name, amount_needed_items_max=10, date_receipt=
     # Настройка опций Chrome
     options = uc.ChromeOptions()
     
-    options.binary_location = "/usr/bin/chromium"
-    options.add_argument("--headless=new")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--remote-debugging-port=9222")
+    options.add_argument("--headless=new") # Если озон не будет пропускать - попробовать без этого параметра
+    # options.add_argument("--disable-gpu")
+    # options.add_argument("--no-sandbox")
+    # options.add_argument("--disable-dev-shm-usage")
+    # options.add_argument("--disable-infobars")
+    # options.add_argument("--disable-extensions")
+    # options.add_argument("--remote-debugging-port=9222")
 
     products_data = []
     product_urls = []

@@ -86,6 +86,10 @@ async def log_user(response: Response,
     if not user_hash:
             raise HTTPException(status_code=401, detail="Incorrect login or password")
     
+    user_name = await user_service.get_name_by_id(user_id)
+    if not user_name:
+            raise HTTPException(status_code=401, detail="Incorrect login or password")
+    
     # verif_user_id = await user_service.verify_user(credentials, user_hash)
 
     if user_service.verify_user(crdnt=credentials, hash_pass=user_hash) == False:
@@ -94,7 +98,7 @@ async def log_user(response: Response,
     
     token = security.create_access_token(uid=f'{user_id}')
     response.set_cookie(conf_auth.JWT_ACCESS_COOKIE_NAME, token)
-    return {"access_token": token}
+    return {"access_token": token, "user_name": user_name, "seller_id": user_id}
 
 
 
