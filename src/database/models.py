@@ -70,8 +70,9 @@ class ProductData(Base):
     ozon_card_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True) 
     discount_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True) 
     base_price: Mapped[float]
-    star_count: Mapped[float]
-    review_count: Mapped[int]
+    star_count: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    review_count: Mapped[Optional[int]] = mapped_column(nullable=True)
+
 
 
     product: Mapped["Product"] = relationship("Product", back_populates="data_history")
