@@ -10,10 +10,10 @@ stats_service = StatisticsService()
 from .test_data.upload_data import main
 
 
-
-@router.post("/upload_test_data")
-async def upload():
-    await main()
+# Для тестовых данных из файла
+# @router.post("/upload_test_data")
+# async def upload():
+#     await main()
 
 
 
