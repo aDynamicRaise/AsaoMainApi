@@ -6,7 +6,7 @@ from fastapi import Depends
 import jwt
 from auth.dependencies import passes_service, send_mail_service, user_service
 
-from auth.schemas import ResponceCreate, UserCreate, UserLogin, UserRead
+from auth.schemas import ResponceCreate, UserCreate, UserLogin, UserRead, EditPass, ConfirmCode
 from auth.service import SendMailService, UserPassService, UserService
 
 
@@ -46,7 +46,7 @@ async def add_one_user(
     user_service: Annotated[UserService, Depends(user_service)],
     user_pass_service: Annotated[UserPassService, Depends(passes_service)],
     send_mail_service: Annotated[SendMailService, Depends(send_mail_service)],
-    user_data: UserCreate = Depends()
+    user_data: UserCreate
 ):
     try: 
         new_user = await user_service.add_one(user_data)
@@ -76,7 +76,7 @@ async def add_one_user(
 async def log_user(response: Response,
                    user_service: Annotated[UserService, Depends(user_service)],
                    user_pass_service: Annotated[UserPassService, Depends(passes_service)],
-                   credentials: UserLogin = Depends()
+                   credentials: UserLogin
                    ):
     user_id = await user_service.get_id_by_email(credentials.email)
     if not user_id:
@@ -136,8 +136,8 @@ async def send_verif_code(request: Request, user_service: Annotated[UserService,
         
 
 
-@user_router.post("/edit_pass/confirm/{code_access}")
-async def confirmation(request: Request, input_code: str, response: Response):
+@user_router.post("/edit_pass/confirm")
+async def confirmation(request: Request, input_code: ConfirmCode, response: Response):
     """Функция создания временного токена для смены пароля."""
     # Пользователь вводит код, при совпадении отдается токен
     payload = get_current_token_payload(request)
@@ -146,7 +146,7 @@ async def confirmation(request: Request, input_code: str, response: Response):
     if user_id == 0:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if not verify_code(user_id, input_code):
+    if not verify_code(user_id, input_code.input_code):
         raise HTTPException(status_code=401, detail="Incorrect code")
         
     temp_token = generate_temp_token(user_id)
@@ -156,8 +156,8 @@ async def confirmation(request: Request, input_code: str, response: Response):
     return {"temp_access_token": temp_token}
 
 
-@user_router.post("/edit_pass/{new_pass}")
-async def edit_pass(request: Request, new_pass: str, response: Response, user_pass_service: Annotated[UserPassService, Depends(passes_service)],):
+@user_router.post("/edit_pass")
+async def edit_pass(request: Request, new_pass: EditPass, response: Response, user_pass_service: Annotated[UserPassService, Depends(passes_service)],):
     """Функция обновления пароля с использованием временного токена."""
     # При наличии токена дается возможность поменять пароль
 
@@ -170,7 +170,7 @@ async def edit_pass(request: Request, new_pass: str, response: Response, user_pa
         payload = jwt.decode(temp_token, TEMP_JWT_SECRET_KEY, algorithms=[conf_auth.JWT_ALGORITHM])
         user_id = payload['user_id']
         # Здесь вы можете обновить пароль пользователя
-        hash_pass = convert_pass_to_hash(new_pass)
+        hash_pass = convert_pass_to_hash(new_pass.new_pass)
         response_pass = await user_pass_service.add_pass(user_id, hash_pass)
         print(f"Добавлен новый пароль для пользователя {user_id}")
         response.delete_cookie(TEMP_JWT_COOKIE_NAME)

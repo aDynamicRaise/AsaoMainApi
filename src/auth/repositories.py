@@ -21,7 +21,7 @@ class UserRepository(SQLAlchemyRepository):
     @classmethod
     async def get_name_by_id(self, user_id: int) -> int | None:
         async with db_helper.session_getter() as session:
-            stmt = select(self.model.name).filter_by(user_id=user_id)
+            stmt = select(self.model.name).filter_by(id=user_id)
             result = await session.execute(stmt)
             result = result.scalars().first()
             return result
