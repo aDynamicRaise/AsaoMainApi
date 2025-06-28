@@ -18,6 +18,7 @@ class ApiPrefix(BaseModel):
     users:  str = "/users"
     stats: str = "/statistics"
     collecting: str = "/collecting"
+    forecast: str = "/forecast"
     
 
 class SecretsConfig(BaseModel):
