@@ -1,4 +1,5 @@
 import json
+import statistics
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, ORJSONResponse
 from .services import StatisticsService
@@ -15,6 +16,22 @@ from .test_data.upload_data import main
 # async def upload():
 #     await main()
 
+
+@router.get("/stats")
+async def get_stats(prices):
+    """Calculate basic statistics for a list of prices."""
+    if not prices:
+        raise ValueError("The list of prices cannot be empty.")
+
+    mean_price = statistics.mean(prices)
+    median_price = statistics.median(prices)
+    stdev_price = statistics.stdev(prices) if len(prices) > 1 else 0.0
+
+    return {
+        "mean": mean_price,
+        "median": median_price,
+        "stdev": stdev_price
+    }
 
 
 @router.post("/price-trend")

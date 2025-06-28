@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from statistics import mean, median, stdev, StatisticsError
 from typing import List, Optional
 import pandas as pd
 import plotly.graph_objects as go
@@ -45,6 +46,33 @@ class StatisticsService:
                 await session.rollback()
                 raise e
             
+        
+    def calculate_statistics(self, prices):
+        """Calculate basic statistics for a list of prices."""
+        # if not prices:
+            # raise ValueError("The list of prices cannot be empty.")
+
+        if not prices:
+            return None
+
+        stats = {}
+        try:
+            stats["mean"] = mean(prices)
+        except StatisticsError:
+            stats["mean"] = None
+
+        try:
+            stats["median"] = median(prices)
+        except StatisticsError:
+            stats["median"] = None
+
+        try:
+            stats["stdev"] = stdev(prices) if len(prices) > 1 else 0.0
+        except StatisticsError:
+            stats["stdev"] = None
+
+        return stats
+            
 
 
     async def generate_interactive_price_chart(
@@ -63,6 +91,7 @@ class StatisticsService:
             # Структура для хранения данных
             products_data = {}
             all_dates = set()
+            products_statistics = {}
             
             for item in data:
                 date_str = item.date_receipt.strftime("%Y-%m-%d %H:%M:%S")
@@ -73,6 +102,11 @@ class StatisticsService:
                     products_data[product_name] = {
                         'dates': [], 'base': [], 'discount': [], 'ozon_card': []
                     }
+                    products_statistics[product_name] = {
+                    'base': [],
+                    'discount': [],
+                    'ozon_card': []
+                }
                 
                 # Добавляем только валидные цены
                 products_data[product_name]['dates'].append(date_str)
@@ -85,6 +119,14 @@ class StatisticsService:
                 products_data[product_name]['ozon_card'].append(
                     float(item.ozon_card_price) if item.ozon_card_price and item.ozon_card_price > 0 else None
                 )
+            
+                # Собираем цены для статистики каждого продукта
+                if item.base_price and item.base_price > 0:
+                    products_statistics[product_name]['base'].append(float(item.base_price))
+                if item.discount_price and item.discount_price > 0:
+                    products_statistics[product_name]['discount'].append(float(item.discount_price))
+                if item.ozon_card_price and item.ozon_card_price > 0:
+                    products_statistics[product_name]['ozon_card'].append(float(item.ozon_card_price))
 
             # Сортируем даты и получаем список товаров
             sorted_dates = sorted(all_dates)
@@ -127,11 +169,21 @@ class StatisticsService:
                 hovermode='x unified',
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
+
+            # Рассчитываем статистику для каждого продукта
+            products_stats = {}
+            for product_name, stats_data in products_statistics.items():
+                products_stats[product_name] = {
+                    'base': self.calculate_statistics(stats_data['base']),
+                    'discount': self.calculate_statistics(stats_data['discount']),
+                    'ozon_card': self.calculate_statistics(stats_data['ozon_card'])
+            }
             
             return {
                 'status': 'success',
                 'data': json.loads(json.dumps(fig.to_dict(), default=str)),
                 'products': product_names,
-                'dates': sorted_dates
+                'dates': sorted_dates,
+                'statistics': products_stats
             }        
     
